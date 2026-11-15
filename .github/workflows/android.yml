@@ -1,0 +1,40 @@
+name: Gerar APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Preparar Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Compilar APK (debug, instalável)
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: Renomear APK
+        run: |
+          mkdir -p saida
+          cp android/app/build/outputs/apk/debug/app-debug.apk "saida/mini-mundo-fofo.apk"
+          ls -la saida
+
+      - name: Publicar APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: mini-mundo-fofo-apk
+          path: saida/mini-mundo-fofo.apk
+          retention-days: 30

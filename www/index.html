@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Mini Mundo Fofo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<style>
+  :root{
+    --rosa:#ffb7cf; --rosa2:#ff8fb3; --creme:#fff8f0; --ceu:#bfe3ff; --verde:#9de08a;
+    --txt:#6b4a52; --som:#ffd9e6; --card:#fff3f6;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; -webkit-user-select:none;}
+  html,body{margin:0;height:100%;overflow:hidden;background:#ffe8f0;font-family:"Segoe UI",system-ui,sans-serif;color:var(--txt);
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);}
+  #c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;}
+  .ui{touch-action:manipulation;}
+  #joy,#joyknob,.abtn,#bJump,#bMine,#bUse{touch-action:none;}
+  button{font-family:inherit;color:var(--txt);}
+  input{font-family:inherit;color:var(--txt);}
+
+  /* ---------- telas ---------- */
+  .screen{position:fixed;inset:0;display:none;z-index:40;background:linear-gradient(180deg,#ffd9e6 0%,#ffe8f0 45%,#d8f0ff 100%);
+    align-items:center;justify-content:center;flex-direction:column;overflow:auto;}
+  .screen.on{display:flex;}
+  .title-big{font-size:clamp(34px,7vw,64px);font-weight:900;color:#ff6b9d;text-shadow:0 3px 0 #fff,0 6px 0 #ffc9da;letter-spacing:1px;margin:8px 0;}
+  .title-sub{font-size:clamp(14px,2.4vw,20px);color:#b97a8c;margin-bottom:22px;}
+  .btn{background:linear-gradient(180deg,#ffd1e0,#ffb7cf);border:0;border-radius:26px;padding:16px 34px;font-size:20px;font-weight:800;
+    box-shadow:0 6px 0 #e897b4, 0 10px 18px #0001;cursor:pointer;margin:8px;transition:transform .08s;}
+  .btn:active{transform:translateY(4px);box-shadow:0 2px 0 #e897b4;}
+  .btn.green{background:linear-gradient(180deg,#c4f0b0,#9de08a);box-shadow:0 6px 0 #7cbb6d,0 10px 18px #0001;}
+  .btn.blue{background:linear-gradient(180deg,#cfe8ff,#a9d4ff);box-shadow:0 6px 0 #84b4e8,0 10px 18px #0001;}
+  .btn.small{padding:10px 18px;font-size:15px;border-radius:18px;}
+  .btn.warn{background:linear-gradient(180deg,#ffd9c9,#ffb79e);box-shadow:0 6px 0 #e8977c;}
+  .cloudrow{font-size:clamp(28px,6vw,52px);letter-spacing:12px;margin-top:6px;animation:fl 4s ease-in-out infinite;}
+  @keyframes fl{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+  .card{background:var(--card);border-radius:26px;box-shadow:0 8px 24px #0002, inset 0 0 0 4px #fff;padding:18px 22px;max-width:92vw;}
+
+  /* personalização */
+  #customize{justify-content:flex-start;padding-top:10px;}
+  #customize .wrap{display:flex;gap:14px;align-items:stretch;max-width:96vw;}
+  #prevCanvas{width:230px;min-width:160px;height:min(62vh,320px);align-self:center;border-radius:24px;
+    background:linear-gradient(180deg,#d8f0ff,#ffe6f0);box-shadow:inset 0 0 0 4px #fff;}
+  .custcol{max-height:78vh;overflow:auto;padding:4px 10px;}
+  .sub{font-weight:800;margin:10px 2px 6px;color:#d4708e;font-size:14px;}
+  .sw{width:34px;height:34px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 6px #0003;margin:3px;cursor:pointer;}
+  .sw.sel{outline:3px solid #ff6b9d;}
+  .chip{background:#fff;border:0;border-radius:16px;padding:8px 13px;margin:3px;font-weight:700;font-size:13px;box-shadow:0 3px 0 #f3cdd9;cursor:pointer;}
+  .chip.sel{background:#ffd1e0;box-shadow:0 3px 0 #e897b4;}
+  .chips{display:flex;flex-wrap:wrap;}
+  #cName{border:3px solid #ffd1e0;border-radius:16px;padding:10px 14px;font-size:16px;font-weight:700;background:#fff;width:200px;}
+
+  /* lobby */
+  #lobby .card{display:flex;flex-direction:column;align-items:center;gap:6px;}
+  #lCode{border:3px solid #ffd1e0;border-radius:16px;padding:12px;font-size:22px;font-weight:900;text-align:center;letter-spacing:4px;width:190px;background:#fff;text-transform:uppercase;}
+  #netWarn{display:none;color:#c4708a;font-size:13px;max-width:300px;text-align:center;}
+
+  /* ---------- HUD ---------- */
+  #hud{position:fixed;inset:0;pointer-events:none;z-index:20;display:none;}
+  #hud .ui{pointer-events:auto;}
+  #topbar{position:absolute;top:max(8px,env(safe-area-inset-top));left:12px;display:flex;gap:8px;align-items:center;}
+  .pill{background:#fff8f0e0;border-radius:20px;padding:6px 12px;font-weight:800;font-size:14px;box-shadow:0 3px 8px #0002;}
+  #topright{position:absolute;top:max(8px,env(safe-area-inset-top));right:12px;display:flex;gap:8px;}
+  .rbtn{width:46px;height:46px;border-radius:50%;border:0;background:#fff8f0e8;font-size:21px;box-shadow:0 4px 0 #e8c9d4,0 6px 12px #0002;cursor:pointer;}
+  .rbtn:active{transform:translateY(3px);box-shadow:0 1px 0 #e8c9d4;}
+  .rbtn.rec{background:#ffb7cf;animation:pulse 1s infinite;}
+  @keyframes pulse{50%{transform:scale(1.12)}}
+  #joy{position:absolute;left:26px;bottom:max(24px,env(safe-area-inset-bottom));width:120px;height:120px;border-radius:50%;
+    background:#ffffff40;border:3px solid #ffffff90;backdrop-filter:blur(2px);}
+  #joyknob{position:absolute;left:50%;top:50%;width:52px;height:52px;margin:-26px 0 0 -26px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%,#fff,#ffb7cf);box-shadow:0 4px 10px #0003;}
+  #actions{position:absolute;right:18px;bottom:max(20px,env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(2,64px);gap:10px;}
+  .abtn{width:64px;height:64px;border-radius:50%;border:0;font-size:26px;background:#fff8f0e8;box-shadow:0 5px 0 #e8c9d4,0 8px 14px #0002;}
+  .abtn:active{transform:translateY(3px);box-shadow:0 2px 0 #e8c9d4;}
+  #hotbar{position:absolute;left:50%;transform:translateX(-50%);bottom:max(14px,env(safe-area-inset-bottom));display:flex;gap:6px;}
+  .slot{width:52px;height:52px;border-radius:16px;background:#fff8f0d8;box-shadow:0 3px 8px #0002;position:relative;display:flex;align-items:center;justify-content:center;}
+  .slot.sel{outline:4px solid #ff6b9d;background:#fff;}
+  .slot .ic{font-size:26px;}
+  .slot .ct{position:absolute;right:4px;bottom:2px;font-size:12px;font-weight:900;color:#fff;text-shadow:0 1px 2px #0008;}
+  .slot.big{width:72px;height:72px;flex-direction:column;}
+  .slot.big .nm{font-size:9px;font-weight:700;text-align:center;line-height:1;position:absolute;bottom:3px;left:2px;right:2px;color:#b97a8c;}
+  .slot.big .ct{bottom:14px;}
+  #crosshair{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:18px;opacity:.6;}
+  #breakbar{position:absolute;left:50%;top:56%;transform:translateX(-50%);width:120px;height:12px;border-radius:8px;background:#fff8;display:none;overflow:hidden;}
+  #breakfill{height:100%;background:linear-gradient(90deg,#ffd84a,#ff8fb3);width:0%;}
+  #toast{position:absolute;top:16%;left:50%;transform:translateX(-50%) scale(.8);background:#fff8f0f0;border-radius:22px;padding:10px 20px;
+    font-weight:800;font-size:15px;box-shadow:0 6px 18px #0003;opacity:0;transition:all .25s;white-space:nowrap;max-width:88vw;text-overflow:ellipsis;overflow:hidden;}
+  #toast.on{opacity:1;transform:translateX(-50%) scale(1);}
+  #toast .big{font-size:20px;margin-right:6px;}
+  #chatmini{position:absolute;left:12px;bottom:170px;max-width:46vw;background:#fff8f0d0;border-radius:14px;padding:6px 12px;font-size:13px;font-weight:600;
+    opacity:0;transition:opacity .3s;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  #chatmini.on{opacity:1;}
+  #bWake{position:absolute;left:50%;top:62%;transform:translateX(-50%);display:none;}
+
+  /* nametags */
+  #tags{position:fixed;inset:0;pointer-events:none;z-index:15;}
+  .nametag{position:absolute;left:0;top:0;transform:translate(-50%,-50%);background:#fff8f0cc;border-radius:12px;padding:2px 10px;
+    font-size:12px;font-weight:800;color:#d4708e;white-space:nowrap;margin-left:0;}
+  .nametag::before{content:'🌸 ';}
+  .bubble{position:absolute;left:0;top:0;background:#fff;border-radius:14px;padding:6px 12px;font-size:12px;font-weight:600;max-width:180px;
+    box-shadow:0 4px 10px #0002;display:none;transform-origin:bottom center;}
+  .bubble.on{display:block;animation:bpop .25s;}
+  @keyframes bpop{from{scale:.6;opacity:0}}
+
+  /* painel */
+  #panel{position:fixed;right:0;top:0;bottom:0;width:min(400px,86vw);background:#fff8f0f5;z-index:30;border-radius:26px 0 0 26px;
+    box-shadow:-8px 0 30px #0003;transform:translateX(105%);transition:transform .25s;display:flex;flex-direction:column;padding:12px;}
+  #panel.on{transform:none;}
+  #ptabs{display:flex;gap:6px;margin-bottom:8px;align-items:center;}
+  .ptab{flex:1;border:0;border-radius:14px;background:#ffe8f0;padding:10px 4px;font-size:18px;cursor:pointer;}
+  .ptab.sel{background:#ffb7cf;}
+  #pClose{border:0;background:none;font-size:22px;cursor:pointer;}
+  #pbody{flex:1;overflow:auto;padding:4px;}
+  .ptitle{font-size:19px;font-weight:900;color:#ff6b9d;margin:4px 0 10px;}
+  .grid{display:flex;flex-wrap:wrap;gap:8px;}
+  .hint{font-size:12px;color:#b97a8c;margin-top:10px;}
+  .empty{color:#c9a0ae;font-weight:600;padding:16px;}
+  .stabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+  .stab{border:0;border-radius:14px;padding:8px 12px;background:#ffe8f0;font-weight:800;font-size:13px;}
+  .stab.sel{background:#ffb7cf;}
+  .stab.off{opacity:.45;}
+  .recipe{display:flex;align-items:center;gap:10px;background:#fff;border-radius:18px;padding:10px;margin-bottom:8px;box-shadow:0 3px 8px #0001;}
+  .recipe.off{opacity:.55;}
+  .ric{font-size:30px;}
+  .rinfo{flex:1;font-size:14px;}
+  .rins{font-size:13px;margin-top:3px;}
+  .rins .miss{opacity:.4;}
+  .mk{border:0;border-radius:14px;background:#9de08a;padding:10px 16px;font-weight:900;box-shadow:0 3px 0 #7cbb6d;cursor:pointer;}
+  .opt{display:flex;align-items:center;justify-content:space-between;background:#fff;border-radius:16px;padding:12px;margin-bottom:8px;font-weight:700;font-size:14px;gap:10px;}
+  .opt input[type=range]{flex:1;max-width:170px;accent-color:#ff6b9d;}
+  .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}
+  .roomcode{margin-top:14px;font-size:14px;text-align:center;color:#b97a8c;font-weight:700;}
+
+  /* chat */
+  #chatbox{position:fixed;left:0;right:0;bottom:0;z-index:35;background:#fff8f0f8;border-radius:26px 26px 0 0;box-shadow:0 -8px 30px #0003;
+    transform:translateY(110%);transition:transform .25s;padding:10px 14px calc(10px + env(safe-area-inset-bottom));max-height:46vh;display:flex;flex-direction:column;}
+  #chatbox.on{transform:none;}
+  #chatlog{flex:1;overflow:auto;min-height:90px;max-height:30vh;padding:4px;}
+  .cmsg{background:#fff;border-radius:14px;padding:6px 12px;margin:4px 0;font-size:14px;max-width:86%;}
+  .cmsg.mine{background:#ffd1e0;margin-left:auto;}
+  .cmsg.sys{background:none;color:#c9889c;font-size:12px;text-align:center;max-width:100%;font-weight:700;}
+  .cmsg b{color:#d4708e;}
+  #chatrow{display:flex;gap:8px;margin-top:8px;}
+  #chatin{flex:1;border:3px solid #ffd1e0;border-radius:18px;padding:10px 14px;font-size:15px;background:#fff;user-select:text;-webkit-user-select:text;}
+  #chatsend{border:0;border-radius:16px;background:#ffb7cf;padding:0 20px;font-size:20px;box-shadow:0 3px 0 #e897b4;cursor:pointer;}
+  #chatClose{position:absolute;right:10px;top:8px;border:0;background:none;font-size:20px;}
+
+  /* modo foto */
+  #photoui{position:fixed;inset:0;z-index:25;pointer-events:none;display:none;}
+  #photoui .ui{pointer-events:auto;}
+  #phBar{position:absolute;bottom:max(16px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);display:flex;gap:14px;align-items:center;}
+  #phSnap{width:74px;height:74px;border-radius:50%;border:6px solid #fff;background:#ff6b9d;box-shadow:0 6px 16px #0004;font-size:30px;}
+  #phCount{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);font-size:90px;font-weight:900;color:#fff;text-shadow:0 4px 0 #ff6b9d;display:none;}
+  #phFrame{position:absolute;inset:14px;border:4px dashed #ffffff70;border-radius:26px;}
+  #flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:50;transition:opacity .25s;}
+  #flash.on{opacity:.9;transition:none;}
+  #photoview{position:fixed;inset:0;z-index:55;background:#0008;display:none;align-items:center;justify-content:center;flex-direction:column;}
+  #photoview.on{display:flex;}
+  #photoimg{max-width:86vw;max-height:72vh;border-radius:18px;box-shadow:0 14px 50px #0008;background:#fff;}
+  #photoview p{color:#fff;font-weight:700;font-size:13px;}
+
+  /* aviso de rotação */
+  #rotate{position:fixed;inset:0;z-index:90;background:#ffd9e6;display:none;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:20px;}
+  #rotate.on{display:flex;}
+  #rotate .ph{font-size:64px;animation:rot 1.6s ease-in-out infinite;}
+  @keyframes rot{0%,20%{transform:rotate(0)}60%,100%{transform:rotate(90deg)}}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="tags"></div>
+
+<!-- Tela título -->
+<div class="screen on" id="titlescreen">
+  <div class="cloudrow">☁️ 🌸 ☁️</div>
+  <div class="title-big">Mini Mundo Fofo</div>
+  <div class="title-sub">explore, construa e cuide de bichinhos com quem você ama 💕</div>
+  <button class="btn green ui" id="tPlay">🌷 Começar</button>
+  <div class="cloudrow" style="font-size:26px;">🐰 🐱 🐮 🐑 🦊 🐥</div>
+</div>
+
+<!-- Personalização -->
+<div class="screen" id="customize">
+  <div class="title-big" style="font-size:28px;">Monte seu personagem 🎀</div>
+  <div class="wrap card">
+    <canvas id="prevCanvas"></canvas>
+    <div class="custcol ui">
+      <div class="sub">📛 Nome</div>
+      <input id="cName" maxlength="14" placeholder="Seu nome fofo">
+      <div class="sub">🎨 Pele</div><div class="chips" id="cSkin"></div>
+      <div class="sub">💇 Cabelo</div><div class="chips" id="cHair"></div>
+      <div class="sub">🌈 Cor do cabelo</div><div class="chips" id="cHairC"></div>
+      <div class="sub">👀 Olhos</div><div class="chips" id="cEyes"></div>
+      <div class="sub">👗 Roupinhas</div><div class="chips" id="cOutfit" style="display:block;"></div>
+    </div>
+  </div>
+  <button class="btn green ui" id="cDone">Pronto! ➜</button>
+</div>
+
+<!-- Lobby multiplayer -->
+<div class="screen" id="lobby">
+  <div class="title-big" style="font-size:30px;">Salinha privada 💌</div>
+  <div class="card ui">
+    <p id="lobbyMsg" style="font-weight:700;max-width:320px;text-align:center;">…</p>
+    <button class="btn green" id="lHost">🏡 Criar sala nova</button>
+    <div style="display:flex;gap:8px;align-items:center;margin-top:10px;">
+      <input id="lCode" maxlength="6" placeholder="CÓDIGO">
+      <button class="btn blue small" id="lJoin">Entrar ➜</button>
+    </div>
+    <p id="netWarn">O multiplayer precisa que vocês estejam com o link desta mesma página aberta e conectados.</p>
+  </div>
+</div>
+
+<!-- HUD -->
+<div id="hud">
+  <div id="topbar">
+    <span class="pill" id="roomTag">💌 —</span>
+    <button class="rbtn ui" id="copyCode" title="copiar código">📋</button>
+    <span class="pill" id="online">👥 1</span>
+    <span class="pill" id="clock">☀️</span>
+  </div>
+  <div id="topright">
+    <button class="rbtn ui" id="bChat">💬</button>
+    <button class="rbtn ui" id="bMic">🎤</button>
+    <button class="rbtn ui" id="bPhoto">📸</button>
+    <button class="rbtn ui" id="bCam">👀</button>
+    <button class="rbtn ui" id="bInv">🎒</button>
+    <button class="rbtn ui" id="bCraft">✨</button>
+    <button class="rbtn ui" id="bSocial">💞</button>
+    <button class="rbtn ui" id="bOpts">⚙️</button>
+  </div>
+  <div id="crosshair">🌸</div>
+  <div id="breakbar"><div id="breakfill"></div></div>
+  <div id="joy" class="ui"><div id="joyknob"></div></div>
+  <div id="actions">
+    <button class="abtn ui" id="bUse">🖐️</button>
+    <button class="abtn ui" id="bJump">⬆️</button>
+    <div></div>
+    <button class="abtn ui" id="bMine">⛏️</button>
+  </div>
+  <div id="hotbar" class="ui"></div>
+  <div id="toast"></div>
+  <div id="chatmini"></div>
+  <button class="btn small ui" id="bWake">☀️ Acordar</button>
+</div>
+
+<!-- Painel lateral -->
+<div id="panel" class="ui">
+  <div id="ptabs">
+    <button class="ptab" data-p="inv">🎒</button>
+    <button class="ptab" data-p="craft">✨</button>
+    <button class="ptab" data-p="social">💞</button>
+    <button class="ptab" data-p="opts">⚙️</button>
+    <button id="pClose">✖️</button>
+  </div>
+  <div id="pbody"></div>
+</div>
+
+<!-- Chat -->
+<div id="chatbox" class="ui">
+  <button id="chatClose">✖️</button>
+  <div id="chatlog"></div>
+  <div id="chatrow">
+    <input id="chatin" maxlength="120" placeholder="Mande um recadinho…">
+    <button id="chatsend">💌</button>
+  </div>
+</div>
+
+<!-- Modo foto -->
+<div id="photoui">
+  <div id="phFrame"></div>
+  <div id="phCount">3</div>
+  <div id="phBar">
+    <button class="rbtn ui" id="phExit">↩️</button>
+    <button class="ui" id="phSnap">📸</button>
+    <button class="rbtn ui" id="phPose">💞</button>
+  </div>
+</div>
+<div id="flash"></div>
+<div id="photoview">
+  <img id="photoimg" alt="sua foto">
+  <p>Segure a imagem para salvar no celular 💾</p>
+  <div style="display:flex;gap:8px;">
+    <button class="btn small green ui" id="pvSave" style="display:none;">💾 Salvar</button>
+    <button class="btn small ui" id="pvClose">Fechar</button>
+  </div>
+</div>
+
+<div id="rotate"><div class="ph">📱</div><h2>Vire o celular na horizontal! 🌸</h2></div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
