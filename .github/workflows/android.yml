@@ -5,6 +5,9 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -55,3 +58,21 @@ jobs:
           name: mini-mundo-fofo-apk
           path: saida/mini-mundo-fofo.apk
           retention-days: 30
+
+      - name: Enviar APK para a branch "apk" (download direto)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp saida/mini-mundo-fofo.apk /tmp/
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
+          rm -rf /tmp/pub && mkdir -p /tmp/pub && cd /tmp/pub
+          git init -q -b apk
+          cp /tmp/mini-mundo-fofo.apk .
+          echo "# APK pronto" > README.md
+          echo "" >> README.md
+          echo "Baixe **mini-mundo-fofo.apk** aqui nesta branch. Compilado automaticamente." >> README.md
+          git add .
+          git commit -q -m "APK $(date -u '+%Y-%m-%d %H:%M') UTC"
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push -f origin apk
