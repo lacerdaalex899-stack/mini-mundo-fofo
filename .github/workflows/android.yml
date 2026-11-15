@@ -17,6 +17,17 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Instalar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Preparar projeto (copia o jogo para dentro do app)
+        run: |
+          npm ci
+          npx cap sync android
+          ls android/app/src/main/assets/public/js | head
+
       - name: Conferir o SDK do Android que já vem no runner
         run: |
           echo "ANDROID_HOME=$ANDROID_HOME"
